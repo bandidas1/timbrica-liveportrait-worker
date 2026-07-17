@@ -1,0 +1,82 @@
+# Pinned FasterLivePortrait config for the Timbrica photo-animate worker.
+# Derived from FLP configs/onnx_mp_infer.yaml (MIT); animal/joyvasa lanes removed.
+#
+# predict_type "torch" = our patches/torch_predictor.py running the ORIGINAL Kuaishou
+# torch modules (stock onnxruntime-gpu has no CUDA kernel for LivePortrait's 5-D
+# GridSample — verified live 2026-07-17, see torch_predictor.py header). The landmark
+# model is plain 4-D ONNX and stays on onnxruntime (CUDA EP, CPU fallback); it only
+# runs once per request (source prep), never per frame.
+models:
+  warping_spade:
+    name: "WarpingSpadeModel"
+    predict_type: "torch"
+    torch_model: "warping_spade"
+    model_path: "/app/checkpoints/liveportrait_torch/warping_module.pth"
+  motion_extractor:
+    name: "MotionExtractorModel"
+    predict_type: "torch"
+    torch_model: "motion_extractor"
+    model_path: "/app/checkpoints/liveportrait_torch/motion_extractor.pth"
+  landmark:
+    name: "LandmarkModel"
+    predict_type: "ort"
+    model_path: "/app/checkpoints/liveportrait_onnx/landmark.onnx"
+  face_analysis:
+    name: "MediaPipeFaceModel"
+    predict_type: "mp"
+  app_feat_extractor:
+    name: "AppearanceFeatureExtractorModel"
+    predict_type: "torch"
+    torch_model: "appearance_feature_extractor"
+    model_path: "/app/checkpoints/liveportrait_torch/appearance_feature_extractor.pth"
+  stitching:
+    name: "StitchingModel"
+    predict_type: "torch"
+    torch_model: "stitching"
+    model_path: "/app/checkpoints/liveportrait_torch/stitching_retargeting_module.pth"
+  stitching_eye_retarget:
+    name: "StitchingModel"
+    predict_type: "torch"
+    torch_model: "stitching_eye"
+    model_path: "/app/checkpoints/liveportrait_torch/stitching_retargeting_module.pth"
+  stitching_lip_retarget:
+    name: "StitchingModel"
+    predict_type: "torch"
+    torch_model: "stitching_lip"
+    model_path: "/app/checkpoints/liveportrait_torch/stitching_retargeting_module.pth"
+
+crop_params:
+  src_dsize: 512
+  src_scale: 2.3
+  src_vx_ratio: 0.0
+  src_vy_ratio: -0.125
+  dri_scale: 2.2
+  dri_vx_ratio: 0.0
+  dri_vy_ratio: -0.1
+
+infer_params:
+  flag_crop_driving_video: False
+  flag_normalize_lip: True
+  flag_source_video_eye_retargeting: False
+  flag_video_editing_head_rotation: False
+  flag_eye_retargeting: False
+  flag_lip_retargeting: False
+  flag_stitching: True
+  flag_relative_motion: True
+  flag_pasteback: True
+  flag_do_crop: True
+  flag_do_rot: True
+
+  lip_normalize_threshold: 0.03
+  source_video_eye_retargeting_threshold: 0.18
+  driving_smooth_observation_variance: 1e-7
+  anchor_frame: 0
+  mask_crop_path: "/app/config/mask_template.png"
+  driving_multiplier: 1.0
+  animation_region: "all"
+
+  cfg_mode: "incremental"
+  cfg_scale: 1.2
+
+  source_max_dim: 1280
+  source_division: 2
