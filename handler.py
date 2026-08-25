@@ -421,4 +421,23 @@ def handler(event: dict) -> dict:
 if __name__ == "__main__":
     import runpod
 
+    # Can this host actually run our kernels? Asked BEFORE the worker announces
+    # itself, because the alternative is what happened to the sibling workers on
+    # 2026-08-16..18: RunPod started satisfying GPU classes with Blackwell
+    # (sm_120) slices, this image is built against cu124 and has no kernels for
+    # them, and a worker that finds out mid-job just restarts — three days of
+    # billing for zero completed jobs, with /health showing "initializing" and
+    # unhealthy: 0 the whole time. The one thing missing back then was a worker
+    # that names its own host, so print that too, always.
+    import gpu_probe
+
+    print(f"[boot] host={gpu_probe.host_report()}", flush=True)
+    try:
+        gpu_probe.assert_gpu_usable()
+    except gpu_probe.GpuUnusable as exc:
+        # Exit rather than serve: RunPod reschedules the job on another host,
+        # while a worker that stays up would fail every job it is handed.
+        print(f"[gpu-unusable] {exc} host={gpu_probe.host_report()}", flush=True)
+        raise SystemExit(1)
+
     runpod.serverless.start({"handler": handler})

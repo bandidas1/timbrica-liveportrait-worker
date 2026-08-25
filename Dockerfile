@@ -60,6 +60,6 @@ COPY patches/mediapipe_face_model.py flp/src/models/mediapipe_face_model.py
 COPY patches/torch_predictor.py .
 COPY config/infer.yaml config/infer.yaml
 COPY presets/ presets/
-COPY restore.py handler.py ./
+COPY gpu_probe.py restore.py handler.py ./
 
 CMD ["python", "-u", "handler.py"]
